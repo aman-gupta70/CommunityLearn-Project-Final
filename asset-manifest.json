@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/CommunityLearn-Project-Final/static/css/main.12a5f520.css",
+    "main.js": "/CommunityLearn-Project-Final/static/js/main.bb9928cd.js",
+    "static/js/488.a6998d7e.chunk.js": "/CommunityLearn-Project-Final/static/js/488.a6998d7e.chunk.js",
+    "index.html": "/CommunityLearn-Project-Final/index.html",
+    "main.12a5f520.css.map": "/CommunityLearn-Project-Final/static/css/main.12a5f520.css.map",
+    "main.bb9928cd.js.map": "/CommunityLearn-Project-Final/static/js/main.bb9928cd.js.map",
+    "488.a6998d7e.chunk.js.map": "/CommunityLearn-Project-Final/static/js/488.a6998d7e.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.12a5f520.css",
+    "static/js/main.bb9928cd.js"
+  ]
+}
