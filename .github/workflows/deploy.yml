@@ -1,4 +1,4 @@
-name: Deploy React App
+name: Deploy React to GitHub Pages
 
 on:
   push:
@@ -13,25 +13,24 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: CommunityLearn/frontend/package-lock.json
       
       - name: Install dependencies
-        working-directory: CommunityLearn/frontend
-        run: npm ci
+        run: |
+          cd CommunityLearn/frontend
+          npm install
       
-      - name: Build React app
-        working-directory: CommunityLearn/frontend
-        run: npm run build
+      - name: Build
+        run: |
+          cd CommunityLearn/frontend
+          npm run build
         env:
           CI: false
       
@@ -44,5 +43,4 @@ jobs:
           path: CommunityLearn/frontend/build
       
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v4
