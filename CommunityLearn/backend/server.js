@@ -96,7 +96,7 @@ const isStrongPassword = (password) => {
 
 // ============ AUTH ROUTES ============
 
-// Register with SECURITY CHECKS
+// Register with SECURITY CHECKS - UPDATED VERSION
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, name, role } = req.body;
@@ -107,26 +107,29 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     // Email validation
-    if (!isValidEmail(email)) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
     // Password strength validation
-    if (!isStrongPassword(password)) {
+    if (password.length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters long' });
     }
 
-    // Check if user already exists
+    // SECURITY: Check if user already exists (case-insensitive)
     const existingUser = await pool.query(
       'SELECT * FROM users WHERE LOWER(email) = LOWER($1)',
       [email]
     );
 
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'Email already registered' });
+      return res.status(400).json({ 
+        error: 'This email is already registered. Please use a different email or login instead.' 
+      });
     }
 
-    // Hash password with salt rounds
+    // Hash password with 12 salt rounds (more secure)
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create user
@@ -494,6 +497,141 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
   }
 });
 
+// ============ AI CHATBOT ROUTE ============
+
+// Smart Response Generator (FREE alternative to ChatGPT)
+function generateSmartResponse(message) {
+  const msg = message.toLowerCase();
+
+  // Educational responses with context
+  const responses = {
+    math: {
+      keywords: ['math', 'algebra', 'calculus', 'geometry', 'equation', 'solve', 'formula'],
+      response: 'I can help with mathematics! Could you be more specific about the problem? For example:\n\n' +
+               '• What topic? (algebra, calculus, geometry)\n' +
+               '• What\'s the specific question?\n' +
+               '• What have you tried so far?\n\n' +
+               'Common math resources: Khan Academy, our Math Fundamentals session, and algebra practice quizzes.'
+    },
+    programming: {
+      keywords: ['code', 'programming', 'javascript', 'python', 'java', 'html', 'css', 'function', 'loop', 'array'],
+      response: 'Programming question detected! Let me help:\n\n' +
+               '1. **Debugging**: Share your code and error message\n' +
+               '2. **Concepts**: Which topic? (variables, functions, loops, objects)\n' +
+               '3. **Projects**: I can guide you step-by-step\n\n' +
+               '💡 Pro tip: Break complex problems into smaller steps. Check our "Web Development Basics" session!'
+    },
+    homework: {
+      keywords: ['homework', 'assignment', 'project', 'due', 'deadline'],
+      response: 'I\'ll help guide you through your homework! Remember, I\'m here to help you **learn**, not just give answers.\n\n' +
+               'Please share:\n' +
+               '• Subject and topic\n' +
+               '• Specific question you\'re stuck on\n' +
+               '• What you\'ve tried already\n\n' +
+               'This way, you\'ll truly understand the material! 📚'
+    },
+    study: {
+      keywords: ['study', 'tips', 'prepare', 'exam', 'test', 'memorize', 'concentrate'],
+      response: '📖 **Effective Study Strategies:**\n\n' +
+               '1. **Pomodoro Technique**: Study 25 min, break 5 min\n' +
+               '2. **Active Recall**: Test yourself instead of re-reading\n' +
+               '3. **Spaced Repetition**: Review material at increasing intervals\n' +
+               '4. **Teach Someone**: Best way to learn is to teach\n' +
+               '5. **Practice Problems**: Do more exercises than reading\n\n' +
+               'What subject are you studying for?'
+    },
+    motivation: {
+      keywords: ['difficult', 'hard', 'can\'t', 'confused', 'stuck', 'don\'t understand', 'frustrated'],
+      response: 'I understand learning can be challenging, but you\'re doing great by asking for help! 💪\n\n' +
+               '**Remember:**\n' +
+               '• Every expert was once a beginner\n' +
+               '• Making mistakes is part of learning\n' +
+               '• Break problems into tiny steps\n' +
+               '• Take breaks when frustrated\n\n' +
+               'Let\'s work through this together. What specific part is confusing you?'
+    },
+    quiz: {
+      keywords: ['quiz', 'practice', 'test myself', 'exercise'],
+      response: '🎯 **Quiz & Practice:**\n\n' +
+               'Our platform offers:\n' +
+               '• Auto-graded quizzes (instant feedback)\n' +
+               '• Multiple difficulty levels\n' +
+               '• Subject-specific practice\n\n' +
+               'Start with **Easy** to build confidence, then progress to **Medium** and **Hard**. ' +
+               'Review your mistakes - that\'s where the real learning happens!'
+    },
+    session: {
+      keywords: ['session', 'tutor', 'teacher', 'class', 'live', 'meeting'],
+      response: '👨‍🏫 **Live Tutoring Sessions:**\n\n' +
+               'Available sessions:\n' +
+               '• **Dr. Sarah Johnson** - Mathematics (Expert in Algebra & Calculus)\n' +
+               '• **Prof. Mike Chen** - Programming (Web Dev, JavaScript)\n' +
+               '• **Emily Roberts** - English & Writing\n\n' +
+               'Sessions are interactive - you can ask questions in real-time! ' +
+               'Check the Sessions tab to book.'
+    }
+  };
+
+  // Check which category matches
+  for (const [category, data] of Object.entries(responses)) {
+    if (data.keywords.some(keyword => msg.includes(keyword))) {
+      return data.response;
+    }
+  }
+
+  // Greeting responses
+  if (msg.match(/^(hi|hello|hey|greetings)/)) {
+    return 'Hello! 👋 Welcome to CommunityLearn!\n\n' +
+           'I can help you with:\n' +
+           '• Homework and assignments\n' +
+           '• Study tips and strategies\n' +
+           '• Math, Programming, Science, Languages\n' +
+           '• Quiz practice and test prep\n' +
+           '• Finding the right tutor or session\n\n' +
+           'What would you like to learn about today?';
+  }
+
+  // Thank you responses
+  if (msg.match(/(thank|thanks|appreciate)/)) {
+    return 'You\'re very welcome! 😊 Keep up the excellent work with your studies. ' +
+           'Remember, I\'m here 24/7 whenever you need help. Good luck!';
+  }
+
+  // Default intelligent response
+  return 'That\'s an interesting question! While I might not have all the details, here\'s how I can help:\n\n' +
+         '1. **Clarify your question** - The more specific, the better I can assist\n' +
+         '2. **Browse Resources** - Check our library for relevant materials\n' +
+         '3. **Book a session** - Connect with a specialized tutor\n' +
+         '4. **Try a quiz** - Practice and test your knowledge\n\n' +
+         'What would be most helpful for you right now?';
+}
+
+app.post('/api/chat/message', authenticateToken, async (req, res) => {
+  try {
+    const { message, conversationHistory } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Smart Pattern Matching (FREE - No API key needed)
+    const aiResponse = generateSmartResponse(message);
+
+    res.json({
+      success: true,
+      response: aiResponse,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get response',
+      fallback: 'I apologize, but I\'m having trouble processing your request right now. Please try again or contact a human tutor for assistance.'
+    });
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ 
@@ -509,4 +647,11 @@ app.listen(PORT, () => {
   console.log(`✅ CommunityLearn Backend running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔒 Security features enabled: Password hashing, JWT, Rate limiting`);
+  console.log('🔒 Security features enabled:');
+  console.log('   ✓ Email validation');
+  console.log('   ✓ Password strength check (min 6 chars)');
+  console.log('   ✓ Duplicate email prevention');
+  console.log('   ✓ Case-insensitive email matching');
+  console.log('   ✓ Password hashing (bcrypt, 12 rounds)');
+  console.log('🤖 AI Chatbot ready with smart responses!');
 });
